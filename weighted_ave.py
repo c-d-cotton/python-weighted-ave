@@ -72,13 +72,15 @@ def weighted_ave_test():
         raise ValueError('Weighted median (nan) failed.')
 
 
-def groupby_weighted_mean(df, group_col, data_col, weight_col):
+def groupby_weighted_mean(df, group_col, data_col, weight_col, mindatavals = None):
     """
     Gets a groupby weighted mean
 
     data_col is a list of the columns over which to compute the means. It can also be a single string if there is only one column.
     weight_col is a list of the columns for the weights. Alternatively, a string can be specified in which case only one weight column can be used for all the weights.
     group_col is a string or list for the groups i.e. 'year' or ['year'] or ['year', 'eli']
+
+    mindatavals specifies that if a group for a data column has fewer than mindatavals then set it to be nan
     """
     # get groups
     g = df.groupby(group_col)
@@ -99,6 +101,9 @@ def groupby_weighted_mean(df, group_col, data_col, weight_col):
         result = g['_data_times_weight'].sum() / g['_weight_where_notnull'].sum()
         df2 = result.to_frame()
         df2.columns = [data_col[i]]
+        if mindatavals is not None:
+            dfnumvals = g[data_col[i]].count()
+            df2[dfnumvals < mindatavals] = np.nan
         df2list.append(df2)
 
     del df['_data_times_weight'], df['_weight_where_notnull']
